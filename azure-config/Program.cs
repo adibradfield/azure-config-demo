@@ -25,28 +25,32 @@ namespace azure_config
                     webBuilder.UseStartup<Startup>();
                     webBuilder.ConfigureAppConfiguration((context, builder) =>
                     {
-                        var tempConfig = builder.Build();
+                        if(!context.HostingEnvironment.IsDevelopment()){
+                            var tempConfig = builder.Build();
 
-                        builder.AddAzureAppConfiguration(opt =>
-                        {
-                            opt.Connect(tempConfig["ConnectionStrings:AppConfiguration"]);
-                            opt.UseFeatureFlags(flags => {
-                                flags.Select("*");
-                                flags.Select("*", context.HostingEnvironment.EnvironmentName);
-                                flags.CacheExpirationInterval = TimeSpan.FromDays(1);
-                            });
-
-                            opt.Select("*");
-                            opt.Select("*", context.HostingEnvironment.EnvironmentName);
-
-                            opt.ConfigureRefresh(refresh =>
+                            builder.AddAzureAppConfiguration(opt =>
                             {
-                                refresh.Register("Sentinel", refreshAll: true);
-                                refresh.SetCacheExpiration(TimeSpan.FromDays(1));
-                            });
+                                opt.Connect(tempConfig["ConnectionStrings:AppConfiguration"]);
+                                opt.UseFeatureFlags(flags => {
+                                    flags.Select("*");
+                                    flags.Select("*", context.HostingEnvironment.EnvironmentName);
+                                    //flags.CacheExpirationInterval = TimeSpan.FromSeconds(2);
+                                    flags.CacheExpirationInterval = TimeSpan.FromDays(1);
+                                });
 
-                            SetupConfigurationRefresh(tempConfig, opt.GetRefresher());
-                        }, optional: true);
+                                opt.Select("*");
+                                opt.Select("*", context.HostingEnvironment.EnvironmentName);
+
+                                opt.ConfigureRefresh(refresh =>
+                                {
+                                    refresh.Register("Sentinel", refreshAll: true);
+                                    //refresh.SetCacheExpiration(TimeSpan.FromSeconds(2));
+                                    refresh.SetCacheExpiration(TimeSpan.FromDays(1));
+                                });
+
+                                SetupConfigurationRefresh(tempConfig, opt.GetRefresher());
+                            }, optional: false);
+                        }
                     });
                 });
 
